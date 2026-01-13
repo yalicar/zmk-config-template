@@ -1,9 +1,55 @@
-include:
-  - board: nice_nano_v2
-    shield: sofle_left
-    snippet: studio-rpc-usb-uart
-    cmake-args:
-      - -DCONFIG_ZMK_STUDIO=y
+name: Build
 
-  - board: nice_nano_v2
-    shield: sofle_right
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:2.5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache west modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-zephyr-modules
+        with:
+          path: |
+            modules/
+            tools/
+            zephyr/
+            bootloader/
+            zmk/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('manifest-dir/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+
+      - name: Initialize west
+        run: |
+          west init -l config
+          west update
+          west zephyr-export
+
+      - name: Build firmware
+        run: |
+          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=sofle_left
+          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=sofle_right
+
+      - name: Rename firmware
+        run: |
+          mv build/zephyr/zmk.uf2 sofle_left.uf2 || true
+          mv build/zephyr/zmk.uf2 sofle_right.uf2 || true
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: zmk-firmware
+          path: |
+            sofle_left.uf2
+            sofle_right.uf2
