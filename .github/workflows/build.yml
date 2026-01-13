@@ -38,11 +38,11 @@ jobs:
 
       - name: Build left
         run: |
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=sofle_left
+          west build -s zmk/app -b nice_nano -- -DSHIELD=sofle_left
 
       - name: Build right
         run: |
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=sofle_right
+          west build -s zmk/app -b nice_nano -- -DSHIELD=sofle_right
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
