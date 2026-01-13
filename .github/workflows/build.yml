@@ -24,7 +24,7 @@ jobs:
       - name: Build LEFT (Studio)
         run: |
           west build -s zmk/app -b nice_nano -- \
-            -DSHIELD=sofle_rev1_encoder_left \
+            -DSHIELD=splitkb_aurora_sofle_left \
             -DSNIPPET=studio-rpc-usb-uart \
             -DCONFIG_ZMK_STUDIO=y \
             -DCONFIG_ZMK_STUDIO_LOCKING=n
@@ -33,7 +33,7 @@ jobs:
       - name: Build RIGHT
         run: |
           west build -s zmk/app -b nice_nano -- \
-            -DSHIELD=sofle_rev1_encoder_right
+            -DSHIELD=splitkb_aurora_sofle_right
 
       - name: Upload
         uses: actions/upload-artifact@v4
