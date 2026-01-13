@@ -9,47 +9,42 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: zmkfirmware/zmk-build-arm:2.5
+      image: zmkfirmware/zmk-build-arm:stable
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Cache west modules
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-zephyr-modules
-        with:
-          path: |
-            modules/
-            tools/
-            zephyr/
-            bootloader/
-            zmk/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('manifest-dir/west.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-
-      - name: Initialize west
+      - name: Init west
         run: |
           west init -l config
           west update
           west zephyr-export
 
-      - name: Build firmware
+      # IZQUIERDA (central + USB + pantalla)
+      - name: Build LEFT
         run: |
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=sofle_left
-          west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=sofle_right
+          west build -s zmk/app -b nice_nano -- \
+            -DSHIELD=splitkb_aurora_sofle_left \
+            -DSNIPPET=studio-rpc-usb-uart \
+            -DCONFIG_ZMK_STUDIO=y \
+            -DCONFIG_ZMK_STUDIO_LOCKING=n
 
-      - name: Rename firmware
+      - name: Copy left
+        run: cp build/zephyr/zmk.uf2 left.uf2
+
+      # DERECHA
+      - name: Build RIGHT
         run: |
-          mv build/zephyr/zmk.uf2 sofle_left.uf2 || true
-          mv build/zephyr/zmk.uf2 sofle_right.uf2 || true
+          west build -s zmk/app -b nice_nano -- \
+            -DSHIELD=splitkb_aurora_sofle_right
 
-      - name: Upload firmware
+      - name: Copy right
+        run: cp build/zephyr/zmk.uf2 right.uf2
+
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: zmk-firmware
           path: |
-            sofle_left.uf2
-            sofle_right.uf2
+            left.uf2
+            right.uf2
