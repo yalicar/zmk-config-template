@@ -12,41 +12,24 @@ jobs:
       image: zmkfirmware/zmk-build-arm:stable
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Cache west modules
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-zephyr-modules
-        with:
-          path: |
-            modules/
-            tools/
-            zephyr/
-            bootloader/
-            zmk/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('config/west.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-
-      - name: Initialize west
+      - name: Init west
         run: |
           west init -l config
           west update
           west zephyr-export
 
-      - name: Build left
+      - name: Build LEFT (Studio enabled)
         run: |
-          west build -s zmk/app -b nice_nano -- -DSHIELD=sofle_left
+          west build -s zmk/app -b nice_nano -- \
+            -DSHIELD=sofle_left \
+            -DSNIPPET=studio-rpc-usb-uart \
+            -DCONFIG_ZMK_STUDIO=y \
+            -DCONFIG_ZMK_STUDIO_LOCKING=n
 
-      - name: Build right
-        run: |
-          west build -s zmk/app -b nice_nano -- -DSHIELD=sofle_right
-
-      - name: Upload firmware
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: zmk-firmware
-          path: |
-            build/zephyr/zmk.uf2
+          path: build/zephyr/zmk.uf2
